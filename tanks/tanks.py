@@ -40,7 +40,15 @@ largefont = pygame.font.SysFont("comicsansms", 60)
 
 
 clock = pygame.time.Clock()
-fps = 10
+fps = 15
+
+tankWidth = 40
+tankHeight = 20
+
+turretWidth = 5
+wheelWidth = 5
+
+groundHeight = 35
 
 
 def gameIntro():
@@ -49,7 +57,6 @@ def gameIntro():
     surface.fill(black)
     msg_to_screen("*** Welcome to Tanks ***",cyan,-100,"large")
     msg_to_screen("Shoot them before getting shoot you..",white,-30,"small")
-    # msg_to_screen("Press \"S\" for start.  \"P\" for pause.  \"Q\" for quit", yellow, 10, "small")
 
     while intro:
         button("Play", 200,450,100,80, "play", darkgreen, green)
@@ -79,8 +86,6 @@ def gameControls():
     msg_to_screen("Fire : Spacebar", orange,-30,"small")
     msg_to_screen("Move Tank : Up & Down keys", orange,10,"small")
     msg_to_screen("Move Turret : Left & Right keys", orange,50,"small")
-    # button("Back", 350,450,100,80, "backtointro", cyan, lavender)
-    
 
     while gcont:
         button("Back", 20,500,100,80, "backtointro", cyan, lavender)
@@ -155,7 +160,6 @@ def pause():
                     elif event.key == pygame.K_q:
                         pygame.quit()
                         quit()
-        # clock.tick(5)
 
 
 def msg_to_screen(msg, color, y_offset=0, size="small"):
@@ -164,9 +168,236 @@ def msg_to_screen(msg, color, y_offset=0, size="small"):
     surface.blit(textSurf, textRect)
 
 
+def tank(x,y,turPos):
+    x,y = int(x),int(y)
+
+    posTurrets = [(x-27,y-2),(x-26,y-5),(x-25,y-8),(x-23,y-12),(x-20,y-14),(x-18,y-15),(x-15,y-17),
+                   (x-13,y-19),(x-11,y-21)]
+
+    pygame.draw.circle(surface, yellow, (x,y), tankHeight//2)
+    pygame.draw.rect(surface, yellow, (x-tankHeight,y,tankWidth,tankHeight))
+    pygame.draw.line(surface, yellow, (x,y), posTurrets[turPos], turretWidth)
+
+    startX = 15
+    for i in range(7):
+        pygame.draw.circle(surface, chrome, (x-startX,y+20), wheelWidth)
+        startX -= 5
+    
+    return posTurrets[turPos]
+
+
+def enemy_tank(x,y,turPos):
+    x,y = int(x),int(y)
+
+    posTurrets = [(x+27,y-2),(x+26,y-5),(x+25,y-8),(x+23,y-12),(x+20,y-14),(x+18,y-15),(x+15,y-17),
+                   (x+13,y-19),(x+11,y-21)]
+
+    pygame.draw.circle(surface, maroon, (x,y), tankHeight//2)
+    pygame.draw.rect(surface, maroon, (x-tankHeight,y,tankWidth,tankHeight))
+    pygame.draw.line(surface, maroon, (x,y), posTurrets[turPos], turretWidth)
+
+    startX = 15
+    for i in range(7):
+        pygame.draw.circle(surface, pink, (x-startX,y+20), wheelWidth)
+        startX -= 5
+    
+    return posTurrets[turPos]
+
+
+def barrier(barX, barHeight, barWidth):
+    pygame.draw.rect(surface, lavender, (barX, height-barHeight, barWidth, barHeight))
+
+
+def fireShell(gunPos, tankX, tankY, turPos, firePwr, barX, barWidth, barHeight):
+    fire = True
+    startShell = list(gunPos)
+
+    while fire:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+        pygame.draw.circle(surface, red, (startShell[0],startShell[1]), 5)
+        
+        startShell[0] -= (12 - turPos)*2
+
+        startShell[1] += int((((startShell[0]-gunPos[0])*0.015/(firePwr/50))**2) - (turPos + turPos/(12-turPos)))
+        
+        if startShell[1] > height-groundHeight:
+            hitX = int((startShell[0]*(height-groundHeight))/startShell[1])
+            hitY = height-groundHeight
+            explosion(hitX, hitY)
+            fire = False
+
+        chk_x1 = startShell[0] <= barX + barWidth
+        chk_x2 = startShell[0] >= barX
+
+        chk_y1 = startShell[1] <= height
+        chk_y2 = startShell[1] >= height - barHeight
+
+        if chk_x1 and chk_x2 and chk_y1 and chk_y2:
+            hitX = startShell[0]
+            hitY = startShell[1]
+            explosion(hitX, hitY)
+            fire = False
+
+        pygame.display.update()
+        clock.tick(60)
+
+
+def enemy_fireShell(gunPos, tankX, tankY, p_tankX, p_tankY, turPos, firePwr, barX, barWidth, barHeight):
+    curPower = 1
+    pwrFound = False
+
+    while not pwrFound:
+        curPower += 1
+        if curPower > 100:
+            pwrFound = True
+
+        fire = True
+        startShell = list(gunPos)
+
+        while fire:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
+            # pygame.draw.circle(surface, blue, (startShell[0],startShell[1]), 5)
+            
+            startShell[0] += (12 - turPos)*2
+
+            startShell[1] += int((((startShell[0]-gunPos[0])*0.015/(curPower/50))**2) - (turPos + turPos/(12-turPos)))
+            
+            if startShell[1] > height-groundHeight:
+                hitX = int((startShell[0]*(height-groundHeight))/startShell[1])
+                hitY = height-groundHeight
+                # explosion(hitX, hitY)
+                if p_tankX+15 >  hitX > p_tankX-15:
+                    pwrFound = True
+                fire = False
+
+            chk_x1 = startShell[0] <= barX + barWidth
+            chk_x2 = startShell[0] >= barX
+
+            chk_y1 = startShell[1] <= height
+            chk_y2 = startShell[1] >= height - barHeight
+
+            if chk_x1 and chk_x2 and chk_y1 and chk_y2:
+                hitX = startShell[0]
+                hitY = startShell[1]
+                # explosion(hitX, hitY)
+                fire = False
+
+    
+    fire = True
+    startShell = list(gunPos)
+
+    while fire:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+        pygame.draw.circle(surface, blue, (startShell[0],startShell[1]), 5)
+        
+        startShell[0] += (12 - turPos)*2
+
+        startShell[1] += int((((startShell[0]-gunPos[0])*0.015/(curPower/50))**2) - (turPos + turPos/(12-turPos)))
+        
+        if startShell[1] > height-groundHeight:
+            hitX = int((startShell[0]*(height-groundHeight))/startShell[1])
+            hitY = height-groundHeight
+            explosion(hitX, hitY)
+            fire = False
+
+        chk_x1 = startShell[0] <= barX + barWidth
+        chk_x2 = startShell[0] >= barX
+
+        chk_y1 = startShell[1] <= height
+        chk_y2 = startShell[1] >= height - barHeight
+
+        if chk_x1 and chk_x2 and chk_y1 and chk_y2:
+            hitX = startShell[0]
+            hitY = startShell[1]
+            explosion(hitX, hitY)
+            fire = False
+
+        pygame.display.update()
+        clock.tick(60)
+
+
+def explosion(x, y, size=50):
+    explode = True
+
+    while explode:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+        
+        startExp = x,y
+        expColors = [red,orange,yellow,chrome]
+
+        mag = 1
+
+        while mag < size:
+            exp_bit_X = x + random.randrange(-1*mag,mag)
+            exp_bit_Y = y + random.randrange(-1*mag,mag)
+
+            pygame.draw.circle(surface, expColors[random.randrange(0,4)], (exp_bit_X,exp_bit_Y), random.randrange(0,5))
+            mag += 1
+
+            pygame.display.update()
+            clock.tick(100)
+        
+        explode = False
+
+
+def power(level):
+    text = smallfont.render("Power : "+str(level)+" %", True, magenta)
+    surface.blit(text, [(width//2)-50,0])
+
+
+def healthbar(player_health, enemy_health):
+    if player_health > 67:
+        player_health_color = green
+    elif player_health > 33:
+        player_health_color = chrome
+    else:
+        player_health_color = red
+
+    if enemy_health > 67:
+        enemy_health_color = green
+    elif enemy_health > 33:
+        enemy_health_color = chrome
+    else:
+        enemy_health = red
+
+    pygame.draw.rect(surface, player_health_color, (680,25,player_health,25))
+    pygame.draw.rect(surface, enemy_health_color, (20,25,player_health,25))
+
+
+
 def gameLoop():
     gameExit = False
     gameOver = False
+
+    mainTankX = width * 0.9
+    mainTankY = height * 0.9
+    tankMove = 0
+    curTurPos = 0
+    chgTur = 0
+
+    enemyTankX = width * 0.1
+    enemyTankY = height * 0.9
+
+    barX = (width//2)+random.randint(-0.2*width,0.2*width)
+    barHeight = random.randint(0.1*height,0.6*height)
+    barWidth = 50
+
+    firePower = 50
+    firePwrChg = 0
+
+    player_health, enemy_health = 100, 100
 
     while not gameExit:
         if gameOver:
@@ -195,19 +426,59 @@ def gameLoop():
             
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    pass
+                    tankMove = -5
                 elif event.key == pygame.K_RIGHT:
-                    pass
+                    tankMove = 5
                 elif event.key == pygame.K_UP:
-                    pass
+                    chgTur = 1
                 elif event.key == pygame.K_DOWN:
-                    pass
+                    chgTur = -1
+                elif event.key == pygame.K_a:
+                    firePwrChg = -1
+                elif event.key == pygame.K_s:
+                    firePwrChg = 1
+                elif event.key == pygame.K_SPACE:
+                    fireShell(gunPos, mainTankX, mainTankY, curTurPos, firePower, barX, barWidth, barHeight)
+                    enemy_fireShell(enemy_gunPos, enemyTankX, enemyTankY, mainTankX, mainTankY, 8, 50, barX, barWidth, barHeight)
+
                 elif event.key == pygame.K_p:
                     pause()
 
-        surface.fill(black)
-        pygame.display.update()
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                    tankMove = 0
+                elif event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                    chgTur = 0
+                elif event.key == pygame.K_p:
+                    pause()
+                elif event.key == pygame.K_a or event.key == pygame.K_s:
+                    firePwrChg = 0
 
+        
+
+        mainTankX += tankMove
+        curTurPos += chgTur
+        if curTurPos > 8: curTurPos = 8
+        elif curTurPos < 0: curTurPos = 0
+
+        if mainTankX - (tankWidth//2) < barX + barWidth:
+            mainTankX += 5
+
+        surface.fill(black)
+        healthbar(player_health, enemy_health)
+
+        gunPos = tank(mainTankX, mainTankY, curTurPos)
+        enemy_gunPos = enemy_tank(enemyTankX, enemyTankY, 8)
+
+        firePower += firePwrChg
+        if firePower > 100: firePower = 100
+        if firePower < 1: firePower = 1
+        power(firePower)
+
+        barrier(barX, barHeight, barWidth)
+        surface.fill(darkgreen, rect=[0, height-groundHeight, width, height])
+
+        pygame.display.update()
         clock.tick(fps)
 
     msg_to_screen("Game exit", cyan, size="large")
