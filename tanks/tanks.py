@@ -50,13 +50,21 @@ wheelWidth = 5
 
 groundHeight = 35
 
+introImg = pygame.image.load("intro.jpg")
+ground = pygame.image.load("ground.png")
+bgList = ["bg1.jpg", "bg2.jpg", "bg3.jpg", "bg4.jpg", "bg5.jpg"]
+
+
 
 def gameIntro():
     intro = True
 
-    surface.fill(black)
-    msg_to_screen("*** Welcome to Tanks ***",cyan,-100,"large")
-    msg_to_screen("Shoot them before getting shoot you..",white,-30,"small")
+    # surface.fill(black)
+    surface.blit(introImg,(0,0))
+
+    msg_to_screen("Tanks",cyan,-100,"large")
+    # msg_to_screen("*** Welcome to Tanks ***",cyan,-100,"large")
+    # msg_to_screen("Shoot them before getting shoot you..",white,-30,"small")
 
     while intro:
         button("Play", 200,450,100,80, "play", darkgreen, green)
@@ -399,6 +407,8 @@ def gameLoop():
 
     player_health, enemy_health = 100, 100
 
+    bgImg = pygame.image.load(bgList[random.randrange(0, 4)])
+
     while not gameExit:
         if gameOver:
             surface.fill(lime)
@@ -464,7 +474,9 @@ def gameLoop():
         if mainTankX - (tankWidth//2) < barX + barWidth:
             mainTankX += 5
 
-        surface.fill(black)
+        # surface.fill(black)
+        surface.blit(bgImg, (0,0))
+
         healthbar(player_health, enemy_health)
 
         gunPos = tank(mainTankX, mainTankY, curTurPos)
@@ -476,11 +488,15 @@ def gameLoop():
         power(firePower)
 
         barrier(barX, barHeight, barWidth)
+
         surface.fill(darkgreen, rect=[0, height-groundHeight, width, height])
+        for i in range(4):
+            surface.blit(ground, (0+i*259,height-groundHeight))
 
         pygame.display.update()
         clock.tick(fps)
 
+    pygame.draw.rect(surface, purple, ((width//2)-150, (height//2)-40, 300, 80))
     msg_to_screen("Game exit", cyan, size="large")
     pygame.display.update()
     time.sleep(2)
