@@ -51,8 +51,9 @@ wheelWidth = 5
 groundHeight = 35
 
 introImg = pygame.image.load("intro.jpg")
-ground = pygame.image.load("ground.png")
-bgList = ["bg1.jpg", "bg2.jpg", "bg3.jpg", "bg4.jpg", "bg5.jpg"]
+groundList = ["ground1.png", "ground2.png", "ground3.png", "ground4.png", "ground5.png"]
+bgList = ["bg1.jpg", "bg2.jpg", "bg3.jpg", "bg4.jpg", "bg5.jpg", "bg6.jpg", "bg7.jpg", "bg8.jpg"]
+wallList = ["wall1.jpg", "wall2.jpg", "wall3.jpg", "wall4.jpg"]
 
 
 
@@ -105,6 +106,34 @@ def gameControls():
                 quit()
 
         
+def gameOverLoop(winner):
+    gameover = True
+
+    # surface.fill(black)
+    surface.blit(introImg,(0,0))
+    msg_to_screen("Game Over",cyan,-100,"large")
+    if winner:
+        msg_to_screen("You won!!",cyan,-30,"small")
+    else:
+        msg_to_screen("You Lost!!",cyan,-30,"small")
+
+    while gameover:
+        button("Play", 200,450,100,80, "play", darkgreen, green)
+        button("Controls", 350,450,100,80, "controls", chrome, yellow)
+        button("Quit", 500,450,100,80, "quit", maroon, red)
+
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_s:
+                    intro = False
+                if event.key == pygame.K_q:
+                    pygame.quit()
+                    quit()
 
 
 def button(text, x, y, wd, ht, action=None, inactColor=grey, actColor=white, textColor=black):
@@ -212,12 +241,16 @@ def enemy_tank(x,y,turPos):
     return posTurrets[turPos]
 
 
-def barrier(barX, barHeight, barWidth):
+def barrier(wallimg, barX, barHeight, barWidth):
     pygame.draw.rect(surface, lavender, (barX, height-barHeight, barWidth, barHeight))
+    # bar_surface = pygame.Surface((barWidth, height-barHeight))
+    # bar_surface.blit(wallimg, (barX, height-barHeight))
+    # pygame.display.update()
 
 
-def fireShell(gunPos, tankX, tankY, turPos, firePwr, barX, barWidth, barHeight):
+def fireShell(gunPos, tankX, tankY, e_tankX, e_tankY, turPos, firePwr, barX, barWidth, barHeight):
     fire = True
+    damage = 0
     startShell = list(gunPos)
 
     while fire:
@@ -235,6 +268,14 @@ def fireShell(gunPos, tankX, tankY, turPos, firePwr, barX, barWidth, barHeight):
             hitX = int((startShell[0]*(height-groundHeight))/startShell[1])
             hitY = height-groundHeight
             explosion(hitX, hitY)
+            if e_tankX + 10 > hitX > e_tankX - 10:
+                damage = 25
+            elif e_tankX + 15 > hitX > e_tankX - 15:
+                damage = 18
+            elif e_tankX + 25 > hitX > e_tankX - 25:
+                damage = 10
+            elif e_tankX + 35 > hitX > e_tankX - 35:
+                damage = 5
             fire = False
 
         chk_x1 = startShell[0] <= barX + barWidth
@@ -251,9 +292,12 @@ def fireShell(gunPos, tankX, tankY, turPos, firePwr, barX, barWidth, barHeight):
 
         pygame.display.update()
         clock.tick(60)
+    
+    return damage
 
 
 def enemy_fireShell(gunPos, tankX, tankY, p_tankX, p_tankY, turPos, firePwr, barX, barWidth, barHeight):
+    damage = 0
     curPower = 1
     pwrFound = False
 
@@ -309,12 +353,22 @@ def enemy_fireShell(gunPos, tankX, tankY, p_tankX, p_tankY, turPos, firePwr, bar
         
         startShell[0] += (12 - turPos)*2
 
-        startShell[1] += int((((startShell[0]-gunPos[0])*0.015/(curPower/50))**2) - (turPos + turPos/(12-turPos)))
+        curPowerFinal = random.randrange(int(curPower * 0.7), int(curPower * 1.3))
+        startShell[1] += int((((startShell[0]-gunPos[0])*0.015/(curPowerFinal/50))**2) - (turPos + turPos/(12-turPos)))
         
         if startShell[1] > height-groundHeight:
             hitX = int((startShell[0]*(height-groundHeight))/startShell[1])
             hitY = height-groundHeight
             explosion(hitX, hitY)
+            if p_tankX + 15 > hitX > p_tankX - 15:
+                damage = 25
+            elif p_tankX + 15 > hitX > p_tankX - 15:
+                damage = 18
+            elif p_tankX + 25 > hitX > p_tankX - 25:
+                damage = 10
+            elif p_tankX + 35 > hitX > p_tankX - 35:
+                damage = 5
+
             fire = False
 
         chk_x1 = startShell[0] <= barX + barWidth
@@ -331,6 +385,8 @@ def enemy_fireShell(gunPos, tankX, tankY, p_tankX, p_tankY, turPos, firePwr, bar
 
         pygame.display.update()
         clock.tick(60)
+    
+    return damage
 
 
 def explosion(x, y, size=50):
@@ -361,8 +417,9 @@ def explosion(x, y, size=50):
 
 
 def power(level):
+    pygame.draw.rect(surface, grey, ((width//2)-70, 3, 173, 34))
     text = smallfont.render("Power : "+str(level)+" %", True, magenta)
-    surface.blit(text, [(width//2)-50,0])
+    surface.blit(text, [(width//2)-60,0])
 
 
 def healthbar(player_health, enemy_health):
@@ -378,10 +435,10 @@ def healthbar(player_health, enemy_health):
     elif enemy_health > 33:
         enemy_health_color = chrome
     else:
-        enemy_health = red
+        enemy_health_color = red
 
     pygame.draw.rect(surface, player_health_color, (680,25,player_health,25))
-    pygame.draw.rect(surface, enemy_health_color, (20,25,player_health,25))
+    pygame.draw.rect(surface, enemy_health_color, (20,25,enemy_health,25))
 
 
 
@@ -405,9 +462,12 @@ def gameLoop():
     firePower = 50
     firePwrChg = 0
 
-    player_health, enemy_health = 100, 100
+    player_health = 100
+    enemy_health = 100
 
-    bgImg = pygame.image.load(bgList[random.randrange(0, 4)])
+    bgImg = pygame.image.load(bgList[random.randrange(0, 7)])
+    groundImg = pygame.image.load(groundList[random.randrange(0, 4)])
+    wallimg = pygame.image.load(wallList[random.randrange(0, 3)])
 
     while not gameExit:
         if gameOver:
@@ -448,8 +508,45 @@ def gameLoop():
                 elif event.key == pygame.K_s:
                     firePwrChg = 1
                 elif event.key == pygame.K_SPACE:
-                    fireShell(gunPos, mainTankX, mainTankY, curTurPos, firePower, barX, barWidth, barHeight)
-                    enemy_fireShell(enemy_gunPos, enemyTankX, enemyTankY, mainTankX, mainTankY, 8, 50, barX, barWidth, barHeight)
+                    edamage = fireShell(gunPos, mainTankX, mainTankY, enemyTankX, enemyTankY, curTurPos, firePower, barX, barWidth, barHeight)
+                    pdamage = enemy_fireShell(enemy_gunPos, enemyTankX, enemyTankY, mainTankX, mainTankY, 8, 50, barX, barWidth, barHeight)
+                    player_health -= pdamage
+                    enemy_health -= edamage
+
+                    eposMove = ['L','R']
+                    moveIdx = random.randrange(0,2)
+                    for x in range(random.randrange(0,10)):
+                        if width * 0.3 > enemyTankX > width * 0.03:
+                            if eposMove[moveIdx] == "R":
+                                enemyTankX += 5
+                            elif eposMove[moveIdx] == "L":
+                                enemyTankX -= 5
+
+                            surface.blit(bgImg, (0,0))
+                            healthbar(player_health, enemy_health)
+                            gunPos = tank(mainTankX, mainTankY, curTurPos)
+                            enemy_gunPos = enemy_tank(enemyTankX, enemyTankY, 8)
+
+                            firePower += firePwrChg
+                            if firePower > 100: firePower = 100
+                            if firePower < 1: firePower = 1
+                            power(firePower)
+
+                            barrier(wallimg, barX, barHeight, barWidth)
+
+                            surface.fill(darkgreen, rect=[0, height-groundHeight, width, height])
+                            for i in range(4):
+                                surface.blit(groundImg, (0+i*200,height-groundHeight))
+
+                            pygame.display.update()
+                            clock.tick(fps)
+
+
+
+                    if player_health <  1:
+                        gameOverLoop(0)
+                    elif enemy_health < 1:
+                        gameOverLoop(1)
 
                 elif event.key == pygame.K_p:
                     pause()
@@ -487,11 +584,11 @@ def gameLoop():
         if firePower < 1: firePower = 1
         power(firePower)
 
-        barrier(barX, barHeight, barWidth)
+        barrier(wallimg, barX, barHeight, barWidth)
 
         surface.fill(darkgreen, rect=[0, height-groundHeight, width, height])
         for i in range(4):
-            surface.blit(ground, (0+i*259,height-groundHeight))
+            surface.blit(groundImg, (0+i*200,height-groundHeight))
 
         pygame.display.update()
         clock.tick(fps)
