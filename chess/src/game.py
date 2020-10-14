@@ -4,6 +4,8 @@ import os
 import pygame
 import sys
 
+from utils.interface import *
+
 sys.path.insert(0, '../res')
 from fonts import *
 from colors import *
@@ -23,13 +25,23 @@ class Game:
         self.clock = pygame.time.Clock()
         self.fps = 15
 
+        self.interface = Interface(self.screen_surface, self.screen_width, self.screen_height)
+
 
     def gameIntro(self):
         intro = True
 
-        self.screen_surface.fill(chrome)
+        self.screen_surface.fill(lime)
+
+        self.interface.msg_to_screen("Chess", blue, -100, "large")
 
         while intro:
+            if 1 == self.interface.button("1 Player", 450,650,100,80, "one_player", darkgreen, green):
+                pass
+            if 2 == self.interface.button("2 Player", 650,650,100,80, "two_player", chrome, yellow):
+                self.gameLoop()
+
+
             pygame.display.update()
 
             for event in pygame.event.get():
@@ -72,6 +84,7 @@ class Game:
 
 
         pygame.draw.rect(self.screen_surface, purple, ((self.screen_width//2)-150, (self.screen_height//2)-40, 300, 80))
+        self.interface.msg_to_screen("Game exit", cyan, size="large")
         pygame.display.update()
         time.sleep(2)
         pygame.quit()
