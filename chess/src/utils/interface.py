@@ -30,6 +30,7 @@ class Interface():
             textSurface = largefont.render(text, True, color)
         return textSurface, textSurface.get_rect()
 
+
     def button(self, text, x, y, wd, ht, action=None, inactColor=grey, actColor=white, textColor=black):
         cur = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
@@ -41,7 +42,6 @@ class Interface():
                     return 1
                 if action == "two_player":
                     return 2
-
         else:
             pygame.draw.rect(self.surface, inactColor, (x, y, wd, ht))
         
