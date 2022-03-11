@@ -11,7 +11,6 @@ yellow = (255,255,0)
 smallfont = pygame.font.SysFont("comicsansms", 25)
 
 
-
 class Pong:
     def __init__(self, w=700, h=500):
         self.WIDTH = w
@@ -36,6 +35,9 @@ class Pong:
                             green
                             )
 
+        # Init ball
+        self.ball = Ball(self.WIDTH//2, self.HEIGHT//2, self.BALL_RADIUS)
+
 
         # Init display
         self.display = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
@@ -50,8 +52,18 @@ class Pong:
     def draw(self):
         self.display.fill(black)
 
+        # Draw paddles
         self.L_pad.draw(self.display)
         self.R_pad.draw(self.display)
+
+        # Draw ball
+        self.ball.draw(self.display)
+
+        # Draw divider
+        for i in range(10, self.HEIGHT, self.HEIGHT//20):
+            if i % 2 == 1:
+                continue
+            pygame.draw.rect(self.display, white, (self.WIDTH//2 - 5, i, 10, self.HEIGHT//20))
 
         pygame.display.update()
     
@@ -65,6 +77,12 @@ class Pong:
             self.R_pad.move(up=True)
         if keys[pygame.K_DOWN] and self.R_pad.y + self.R_pad.VEL + self.PADDLE_HEIGHT <= self.HEIGHT:
             self.R_pad.move(up=False)
+
+    def move_ball(self):
+        self.ball.move()
+
+    def bounce_engine(self):
+        pass
 
 
 class Paddle:
@@ -93,7 +111,7 @@ class Paddle:
 class Ball:
     def __init__(self, x, y, radius):
         self.MAX_VEL = 5
-        self.COLOR = yellow
+        self.COLOR = red
         self.x = self.original_x = x
         self.y = self.original_y = y
         self.radius = radius

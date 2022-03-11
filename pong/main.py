@@ -16,6 +16,8 @@ def gameloop():
         keys = pygame.key.get_pressed()
         pong.move_paddle(keys)
 
+        pong.move_ball()
+
     pygame.quit()
 
 if __name__ == '__main__':
