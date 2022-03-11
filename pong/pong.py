@@ -1,9 +1,4 @@
 import pygame
-import time
-import random
-from enum import Enum
-from collections import namedtuple
-import numpy as np
 
 pygame.init()
 
@@ -48,6 +43,8 @@ class Pong:
         icon = pygame.image.load("icon.png")
         pygame.display.set_icon(icon)
 
+        # Init clock
+        self.FPS = 60
         self.clock = pygame.time.Clock()
     
     def draw(self):
@@ -57,6 +54,17 @@ class Pong:
         self.R_pad.draw(self.display)
 
         pygame.display.update()
+    
+    def move_paddle(self, keys):
+        if keys[pygame.K_w] and self.L_pad.y - self.L_pad.VEL >= 0:
+            self.L_pad.move(up=True)
+        if keys[pygame.K_s] and self.L_pad.y + self.L_pad.VEL + self.PADDLE_HEIGHT <= self.HEIGHT:
+            self.L_pad.move(up=False)
+
+        if keys[pygame.K_UP] and self.R_pad.y - self.R_pad.VEL >= 0:
+            self.R_pad.move(up=True)
+        if keys[pygame.K_DOWN] and self.R_pad.y + self.R_pad.VEL + self.PADDLE_HEIGHT <= self.HEIGHT:
+            self.R_pad.move(up=False)
 
 
 class Paddle:
